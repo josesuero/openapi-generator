@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.openapitools.codegen.utils.StringUtils.camelize;
 
-public class FreighthubClientCodegen extends AbstractTypeScriptClientCodegen {
+public class FreighthubClientCodegen extends AbstractTypeScript2ClientCodegen {
     public static final String PROJECT_NAME = "projectName";
 
     static Logger LOGGER = LoggerFactory.getLogger(FreighthubClientCodegen.class);
