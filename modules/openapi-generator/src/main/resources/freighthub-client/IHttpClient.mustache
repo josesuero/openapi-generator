@@ -1,0 +1,11 @@
+import { Headers } from './Headers'
+import HttpResponse from './HttpResponse'
+
+export interface HttpClientInterface {
+    get (url: string, headers?: Headers): Promise<HttpResponse>
+    post (url: string, body?: {} | FormData, headers?: Headers): Promise<HttpResponse>
+    put (url: string, body?: {}, headers?: Headers): Promise<HttpResponse>
+    patch (url: string, body?: {}, headers?: Headers): Promise<HttpResponse>
+    delete (url: string, headers?: Headers): Promise<HttpResponse>
+}
+

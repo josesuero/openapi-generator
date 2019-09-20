@@ -1,0 +1,181 @@
+{{>licenseInfo}}
+/* tslint:disable:no-unused-variable member-ordering */
+
+import { inject, injectable } from 'inversify'
+
+import { Headers } from '../Headers'
+import HttpResponse from '../HttpResponse'
+import { IAPIConfiguration } from '../IAPIConfiguration'
+import { HttpClientInterface } from '../IHttpClient'
+{{#imports}}
+import { {{classname}} } from '../{{filename}}'
+{{/imports}}
+
+{{#isCollectionFormatMulti}}
+import { COLLECTION_FORMATS } from '../variables'
+{{/isCollectionFormatMulti}}
+{{#withInterfaces}}
+import { {{classname}}Interface } from './{{classFilename}}Interface'
+{{/withInterfaces}}
+{{#operations}}
+{{#description}}
+/**
+ * {{&description}}
+ */
+{{/description}}
+
+const APPLICATION_JSON = 'application/json'
+const CONTENT_TYPE = 'Content-Type'
+
+@injectable()
+{{#withInterfaces}}
+export class {{classname}} implements {{classname}}Interface {
+{{/withInterfaces}}
+{{^withInterfaces}}
+export class {{classname}} {
+{{/withInterfaces}}
+    private basePath: string = '{{{basePath}}}'
+
+    constructor (@inject('IApiHttpClient') private httpClient: HttpClientInterface,
+        @inject('IAPIConfiguration') private APIConfiguration: IAPIConfiguration ) {
+        if(this.APIConfiguration.basePath) {
+            this.basePath = this.APIConfiguration.basePath
+        }
+    }
+{{#operation}}
+
+    /**
+     * {{summary}}{{^notes}}
+     * {{notes}}
+     {{/notes}}{{#allParams}}* @param {{paramName}}{{#description}} {{description}}{{/description}}
+     {{/allParams}}*{{#useHttpClient}} @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.{{/useHttpClient}}
+     */
+    public async {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}}headers?: Headers): {{#usePromise}}Promise{{/usePromise}}{{^usePromise}}Observable{{/usePromise}}<{{#returnType}}{{{returnType}}}{{#isResponseTypeFile}}|undefined{{/isResponseTypeFile}}{{/returnType}}{{^returnType}}any{{/returnType}}>
+    public async {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}}headers?: Headers): {{#usePromise}}Promise{{/usePromise}}{{^usePromise}}Observable{{/usePromise}}<HttpResponse<{{#returnType}}{{{returnType}}}{{#isResponseTypeFile}}|undefined{{/isResponseTypeFile}}{{/returnType}}{{^returnType}}any{{/returnType}}>>
+    public async {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}}headers: Headers = {}): {{#usePromise}}Promise{{/usePromise}}{{^usePromise}}Observable{{/usePromise}}<any> {
+{{#allParams}}
+{{#required}}
+        if ({{paramName}} === null || {{paramName}} === undefined) {
+            throw new Error('Required parameter {{paramName}} was null or undefined when calling {{nickname}}.')
+        }
+
+{{/required}}
+{{/allParams}}
+{{#hasQueryParams}}
+        let queryParameters: string[] = []
+{{#queryParams}}
+        {{#isListContainer}}
+        if ({{paramName}}) {
+        {{#isCollectionFormatMulti}}
+            {{paramName}}.forEach((element) => {
+                queryParameters.push('{{paramName}}='+encodeURIComponent(String({{paramName}})))
+            })
+        {{/isCollectionFormatMulti}}
+        {{^isCollectionFormatMulti}}
+            queryParameters.push('{{paramName}}='+encodeURIComponent({{paramName}}.join(COLLECTION_FORMATS['{{collectionFormat}}'])))
+        {{/isCollectionFormatMulti}}
+        }
+        {{/isListContainer}}
+        {{^isListContainer}}
+        if ({{paramName}} !== undefined) {
+        {{#isDateTime}}
+           queryParameters.push('{{paramName}}='+encodeURIComponent({{paramName}}.toISOString()))
+        {{/isDateTime}}
+        {{^isDateTime}}
+            queryParameters.push('{{paramName}}='+encodeURIComponent(String({{paramName}})))
+        {{/isDateTime}}
+        }
+        {{/isListContainer}}
+{{/queryParams}}
+
+{{/hasQueryParams}}
+{{#headerParams}}
+        {{#isListContainer}}
+        if ({{paramName}}) {
+            const paramName = '{{baseName}}';
+            headers[paramName] = {{paramName}}.join(COLLECTION_FORMATS['{{collectionFormat}}'])
+        }
+        {{/isListContainer}}
+        {{^isListContainer}}
+        if ({{paramName}}) {
+            const paramName = '{{baseName}}'
+            headers[paramName] = String({{paramName}})
+        }
+        {{/isListContainer}}
+
+{{/headerParams}}
+{{#authMethods}}
+        // authentication ({{name}}) required
+{{#isApiKey}}
+{{#isKeyInHeader}}
+        const KEYNAME = '{{keyParamName}}'
+        if (this.APIConfiguration.apiKeys && this.APIConfiguration.apiKeys[KEYNAME]) {
+            headers[KEYNAME] = this.APIConfiguration.apiKeys[KEYNAME]
+        }
+{{/isKeyInHeader}}
+{{#isKeyInQuery}}
+        const KEYNAME = '{{keyParamName}}'
+        if (this.APIConfiguration.apiKeys && this.APIConfiguration.apiKeys[KEYNAME]) {
+            queryParameters.push('{{paramName}}='+encodeURIComponent(String(this.APIConfiguration.apiKeys[KEYNAME])))
+        }
+{{/isKeyInQuery}}
+{{/isApiKey}}
+{{#isBasic}}
+        if (this.APIConfiguration.username || this.APIConfiguration.password) {
+            headers.Authorization = btoa(this.APIConfiguration.username + ':' + this.APIConfiguration.password)
+        }
+{{/isBasic}}
+{{#isOAuth}}
+        if (this.APIConfiguration.accessToken) {
+            const accessToken = typeof this.APIConfiguration.accessToken === 'function'
+                ? this.APIConfiguration.accessToken()
+                : this.APIConfiguration.accessToken
+            headers.Authorization = 'Bearer ' + accessToken
+        }
+{{/isOAuth}}
+{{/authMethods}}
+        {{^produces}}
+        headers.Accept = APPLICATION_JSON
+        {{/produces}}
+        {{#produces.0}}
+        headers.Accept = '{{#produces}}{{{mediaType}}}{{#hasMore}}, {{/hasMore}}{{/produces}}'
+        {{/produces.0}}
+{{#bodyParam}}
+        {{^consumes}}
+        headers[CONTENT_TYPE] = APPLICATION_JSON
+        {{/consumes}}
+        {{#consumes.0}}
+        headers[CONTENT_TYPE] = '{{{mediaType}}}'
+        {{/consumes.0}}
+{{/bodyParam}}
+{{#hasFormParams}}
+        let body: any = null
+        const formData: FormData = new FormData()
+        headers[CONTENT_TYPE] = 'application/x-www-form-urlencodedcharset=UTF-8'
+{{#formParams}}
+        {{#isListContainer}}
+        if ({{paramName}}) {
+        {{#isCollectionFormatMulti}}
+            {{paramName}}.forEach((element) => {
+                formData.append('{{baseName}}', element)
+            })
+        {{/isCollectionFormatMulti}}
+        {{^isCollectionFormatMulti}}
+            formData.append('{{baseName}}', {{paramName}}.join(COLLECTION_FORMATS['{{collectionFormat}}']))
+        {{/isCollectionFormatMulti}}
+        }
+        {{/isListContainer}}
+        {{^isListContainer}}
+        if ({{paramName}} !== undefined) {
+            formData.append('{{baseName}}', {{paramName}})
+        }
+        {{/isListContainer}}
+{{/formParams}}
+        body = formData
+
+{{/hasFormParams}}
+        return this.httpClient.{{httpMethod}}(`${this.basePath}{{{path}}}{{#hasQueryParams}}?${queryParameters.join('&')}{{/hasQueryParams}}`{{#bodyParam}}, {{paramName}} {{/bodyParam}}{{#hasFormParams}}, body{{/hasFormParams}}, headers)
+    }
+{{/operation}}}
+{{/operations}}

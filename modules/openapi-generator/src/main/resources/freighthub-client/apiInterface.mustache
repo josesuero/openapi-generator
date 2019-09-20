@@ -1,0 +1,27 @@
+{{>licenseInfo}}
+
+import { Headers } from '../Headers'
+import HttpResponse from '../HttpResponse'
+{{#imports}}
+import { {{classname}} } from '../{{filename}}'
+{{/imports}}
+
+{{#operations}}
+{{#description}}
+    /**
+     * {{&description}}
+     */
+{{/description}}
+export interface {{classname}}Interface {
+{{#operation}}
+    /**
+     * {{summary}}
+     * {{notes}}
+    {{#allParams}} * @param {{paramName}} {{description}}
+    {{/allParams}} */
+
+    {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}} headers?: Headers): {{#usePromise}}Promise{{/usePromise}}{{^usePromise}}Observable{{/usePromise}}<{{#returnType}}{{{returnType}}}{{#isResponseTypeFile}}|undefined{{/isResponseTypeFile}}{{/returnType}}{{^returnType}}any{{/returnType}}>
+    {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}} headers?: Headers): {{#usePromise}}Promise{{/usePromise}}{{^usePromise}}Observable{{/usePromise}}<HttpResponse<{{#returnType}}{{{returnType}}}{{#isResponseTypeFile}}|undefined{{/isResponseTypeFile}}{{/returnType}}{{^returnType}}any{{/returnType}}>>
+{{/operation}}
+}
+{{/operations}}

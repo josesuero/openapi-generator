@@ -1,0 +1,74 @@
+import Axios from 'axios'
+import { injectable } from 'inversify'
+
+import { Headers } from './Headers'
+import HttpResponse from './HttpResponse'
+import { HttpClientInterface } from './IHttpClient'
+
+const APPLICATION_JSON = 'application/json'
+
+@injectable()
+export class HttpClient implements HttpClientInterface {
+
+    public async get (url: string, headers?: Headers): Promise<HttpResponse> {
+        return this.performNetworkCall(url, 'GET', undefined, headers)
+    }
+
+    public async post (url: string, body?: {} | FormData, headers?: Headers): Promise<HttpResponse> {
+        return this.performNetworkCall(url, 'POST', this.getJsonBody(body), this.addJsonHeaders(headers))
+    }
+
+    public async put (url: string, body?: {}, headers?: Headers): Promise<HttpResponse> {
+        return this.performNetworkCall(url, 'PUT', this.getJsonBody(body), this.addJsonHeaders(headers))
+    }
+
+    public async patch (url: string, body?: {}, headers?: Headers): Promise<HttpResponse> {
+        return this.performNetworkCall(url, 'PATCH', this.getJsonBody(body), this.addJsonHeaders(headers))
+    }
+
+    public async delete (url: string, headers?: Headers): Promise<HttpResponse> {
+        return this.performNetworkCall(url, 'DELETE', undefined, headers)
+    }
+
+    private getJsonBody (body?: {} | FormData) {
+        if (body === undefined || body instanceof FormData) {
+            return body
+        }
+
+        return JSON.stringify(body)
+    }
+
+    private addJsonHeaders (headers?: Headers) {
+        return {
+            ...headers,
+            'Accept': APPLICATION_JSON,
+            'Content-Type': APPLICATION_JSON,
+        }
+    }
+
+    private async performNetworkCall (url: string, method: "get" | "GET" | "delete" | "DELETE" | "head" | "HEAD" | "options" | "OPTIONS" | "post" | "POST" | "put" | "PUT" | "patch" | "PATCH" | undefined, body?: any, headers?: Headers): Promise<HttpResponse> {
+        return Axios(url, {
+            method,
+            data: body,
+            headers,
+        }).then(async response => {
+            const responseHeaders: Headers = {}
+            if (response.headers && response.headers.forEach) {
+                response.headers.forEach((value: string, name: string) => {
+                    responseHeaders[name.toString().toLowerCase()] = value
+                })
+            }
+
+            const payload = response.data
+            const httpResponse = new HttpResponse(payload, response.status, headers)
+
+            if (response.status >= 400) {
+                throw httpResponse
+            }
+
+            return httpResponse
+
+        })
+    }
+}
+
