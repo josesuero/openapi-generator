@@ -207,7 +207,7 @@ samples/client/petstore/elixir/deps/
 samples/client/petstore/elixir/mix.lock
 
 # groovy
-samples/client/petstore/groovy/build
+samples/client/petstore/
 
 # erlang
 samples/client/petstore/erlang-client/_build/
